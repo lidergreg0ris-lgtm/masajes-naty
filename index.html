@@ -12,7 +12,7 @@
 
     <link rel="icon" type="image/png" href="https://i.postimg.cc/GhL4rqrB/Captura-de-pantalla-2026-06-10-132435.png">
     <link rel="apple-touch-icon" sizes="180x180" href="https://i.postimg.cc/GhL4rqrB/Captura-de-pantalla-2026-06-10-132435.png">
-
+    <link rel="manifest" href="manifest.json">
     <style>
         body, html {
             margin: 0;
@@ -32,6 +32,10 @@
 <body>
 
     <iframe src="https://script.google.com/macros/s/AKfycbwXQWiVKWbMEs4j8yQZ__FlEkkxuNsbE1C6n8wYUvNHtEjDsWal-hCMN2CrgJIZqpOJ/exec"></iframe>
-
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
 </body>
 </html>
