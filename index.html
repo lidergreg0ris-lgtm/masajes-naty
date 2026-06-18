@@ -36,6 +36,7 @@
   const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbwXQWiVKWbMEs4j8yQZ__FlEkkxuNsbE1C6n8wYUvNHtEjDsWal-hCMN2CrgJIZqpOJ/exec";
 
   // Carga las vistas desde Google Apps Script de forma asíncrona
+// Carga las vistas desde Google Apps Script de forma asíncrona
   function cargarVistaPWA(vistaNom = "") {
     const contenedor = document.getElementById("app");
     let urlDestino = `${URL_SCRIPT}?output=api`;
@@ -43,9 +44,13 @@
         urlDestino += `&v=${vistaNom}`;
     }
 
-    fetch(urlDestino)
+    // Se fuerza el modo de redirección compatible con Google Apps Script
+    fetch(urlDestino, {
+        method: 'GET',
+        redirect: 'follow'
+    })
       .then(response => {
-         if (!response.ok) throw new Error("Error en la respuesta de red.");
+         if (!response.ok) throw new Error("Error en la respuesta de red: " + response.status);
          return response.text();
       })
       .then(htmlContenido => {
@@ -68,9 +73,7 @@
             <p>No se pudo sincronizar la aplicación. Verifica tu conexión o intenta recargar.</p>
          </div>`;
       });
-  }
-
-  // Intercepta clics en los botones del menú para que no te saquen de GitHub
+  }  // Intercepta clics en los botones del menú para que no te saquen de GitHub
   document.addEventListener("click", function(e) {
       const link = e.target.closest("a");
       if (link && link.href.includes(URL_SCRIPT)) {
