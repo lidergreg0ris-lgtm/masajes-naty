@@ -37,53 +37,50 @@
 
   // Carga las vistas desde Google Apps Script de forma asíncrona
 // Carga las vistas desde Google Apps Script de forma asíncrona
-  function cargarVistaPWA(vistaNom = "") {
+function cargarVistaPWA(vistaNom = "") {
     const contenedor = document.getElementById("app");
-    let urlDestino = `${URL_SCRIPT}?output=api`;
+    
+    // Generar un nombre de función global temporal para recibir los datos
+    const callbackName = "callbackPWA_" + Math.floor(Math.random() * 100000);
+    
+    let urlDestino = `${URL_SCRIPT}?output=api&callback=${callbackName}`;
     if (vistaNom) {
         urlDestino += `&v=${vistaNom}`;
     }
 
-    // Se fuerza el modo de redirección compatible con Google Apps Script
-    fetch(urlDestino, {
-        method: 'GET',
-        redirect: 'follow'
-    })
-      .then(response => {
-         if (!response.ok) throw new Error("Error en la respuesta de red: " + response.status);
-         return response.text();
-      })
-      .then(htmlContenido => {
-         contenedor.innerHTML = htmlContenido;
-         
-         // Activa y ejecuta los scripts internos del HTML inyectado
-         const scripts = contenedor.querySelectorAll("script");
-         scripts.forEach(oldScript => {
-             const newScript = document.createElement("script");
-             Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
-             newScript.appendChild(document.createTextNode(oldScript.innerHTML));
-             oldScript.parentNode.replaceChild(newScript, oldScript);
-         });
-      })
-      .catch(error => {
-         console.error("Error al cargar la interfaz:", error);
-         contenedor.innerHTML = `
-         <div style="padding:20px; text-align:center; font-family:sans-serif; color:red;">
-            <h3>Error de conexión</h3>
-            <p>No se pudo sincronizar la aplicación. Verifica tu conexión o intenta recargar.</p>
-         </div>`;
-      });
-  }  // Intercepta clics en los botones del menú para que no te saquen de GitHub
-  document.addEventListener("click", function(e) {
-      const link = e.target.closest("a");
-      if (link && link.href.includes(URL_SCRIPT)) {
-          e.preventDefault();
-          const urlObj = new URL(link.href);
-          const vistaParam = urlObj.searchParams.get("v");
-          cargarVistaPWA(vistaParam);
-      }
-  });
+    // Definir qué hacer cuando Google responda
+    window[callbackName] = function(htmlContenido) {
+       contenedor.innerHTML = htmlContenido;
+       
+       // Activar y ejecuta los scripts internos del HTML inyectado
+       const scripts = contenedor.querySelectorAll("script");
+       scripts.forEach(oldScript => {
+           const newScript = document.createElement("script");
+           Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
+           newScript.appendChild(document.createTextNode(oldScript.innerHTML));
+           oldScript.parentNode.replaceChild(newScript, oldScript);
+       });
+       
+       // Limpieza de memoria
+       delete window[callbackName];
+       document.getElementById(callbackName)?.remove();
+    };
 
+    // Inyectar el tag script para forzar al navegador a saltarse CORS
+    const scriptTag = document.createElement("script");
+    scriptTag.id = callbackName;
+    scriptTag.src = urlDestino;
+    scriptTag.onerror = function() {
+       console.error("Error al cargar la interfaz vía Script Tag.");
+       contenedor.innerHTML = `
+       <div style="padding:20px; text-align:center; font-family:sans-serif; color:red;">
+          <h3>Error de conexión</h3>
+          <p>No se pudo sincronizar la aplicación. Verifica tu conexión o intenta recargar.</p>
+       </div>`;
+    };
+    
+    document.body.appendChild(scriptTag);
+  }
   // Ejecución inicial al abrir la PWA
   window.addEventListener("DOMContentLoaded", () => {
       cargarVistaPWA("");
